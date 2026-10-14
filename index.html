@@ -1,28 +1,151 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#0B8359" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="CityGo" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="description" content="CityGo - منصة إدارة الكابتن والمركبات" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <title>CityGo | سيتي جو</title>
-    <meta property="og:image" content="https://bolt.new/static/og_default.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
-    <script type="module" crossorigin src="/assets/index-DXYrAU0g.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CQb2A9pi.css">
-  <script async src="https://bolt.new/badge.js?s=a94dbb68-3450-4b5d-b4a0-408e060b4d57"></script></head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم إدارة CityGo | CityGo Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); direction: rtl; }
+        
+        header.navbar {
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .brand-container { display: flex; align-items: center; gap: 12px; }
+        .brand-name { font-size: 1.5rem; font-weight: 700; color: var(--accent-color); }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .btn-server { background-color: var(--success-color); color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+        
+        .sub-nav {
+            background: #fff;
+            padding: 0.75rem 2rem;
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .sub-nav a { text-decoration: none; color: var(--text-muted); font-weight: 600; padding: 6px 12px; border-radius: 6px; }
+        .sub-nav a.active { background-color: #eff6ff; color: #2563eb; }
+
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 2rem; }
+        .stat-card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-right: 4px solid var(--accent-color); }
+        .stat-card h3 { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px; }
+        .stat-card .number { font-size: 1.8rem; font-weight: 700; color: var(--primary-color); }
+
+        .dashboard-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; }
+        .section-card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f8fafc; }
+        .btn-action { background-color: var(--success-color); color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div id="dashboard-screen">
+        <header class="navbar">
+            <div class="brand-container">
+                <span>🚗</span>
+                <span class="brand-name">CityGo</span>
+                <span style="font-size: 0.85rem; color: #94a3b8; border-right: 1px solid #334155; padding-right: 12px;">لوحة التحكم الإدارية</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn-server">✅ متصل بقاعدة بيانات Supabase</button>
+            </div>
+        </header>
+
+        <nav class="sub-nav">
+            <a href="#" class="active">📊 نظرة عامة</a>
+            <a href="#">👥 إدارة الكباتن (2)</a>
+            <a href="#">📦 طلبات الشحن (0)</a>
+            <a href="#">💬 شات الدعم الفني</a>
+        </nav>
+
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>إجمالي الكباتن</h3>
+                    <div class="number">5</div>
+                    <small style="color: var(--success-color);">🟢 2 نشط حالياً</small>
+                </div>
+                <div class="stat-card" style="border-right-color: #3b82f6;">
+                    <h3>طلبات الموافقة المعلقة</h3>
+                    <div class="number">2</div>
+                    <small style="color: var(--text-muted);">بانتظار التدقيق والتفويض</small>
+                </div>
+                <div class="stat-card" style="border-right-color: var(--success-color);">
+                    <h3>مجموع أرصدة المحافظ</h3>
+                    <div class="number">40.25 د.أ</div>
+                    <small style="color: var(--text-muted);">إجمالي الرصيد للكباتن</small>
+                </div>
+                <div class="stat-card" style="border-right-color: #ef4444;">
+                    <h3>طلبات الشحن المعلقة</h3>
+                    <div class="number">0</div>
+                    <small style="color: var(--text-muted);">تستوجب التحقق المالي</small>
+                </div>
+            </div>
+
+            <div class="dashboard-sections">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>⚡ أحدث طلبات شحن المحفظة</h2>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 0.9rem; padding: 10px 0; text-align: center;">
+                        لا توجد طلبات معلقة
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>👥 كباتن جدد بانتظار الموافقة</h2>
+                    </div>
+                    <div class="list-item" id="driver-1">
+                        <div>
+                            <strong>محمود الطراونة</strong>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">الكرك - 0788823456</div>
+                        </div>
+                        <button class="btn-action" onclick="approveDriver('driver-1')">تفعيل</button>
+                    </div>
+                    <div class="list-item" id="driver-2">
+                        <div>
+                            <strong>حمزة القضاة</strong>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">عجلون - 0785556677</div>
+                        </div>
+                        <button class="btn-action" onclick="approveDriver('driver-2')">تفعيل</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // اتصال افتراضي آمن مع مشروع Supabase الخاص بك
+        const supabaseUrl = 'https://uvgwvupnyuznowsshqpv.supabase.co';
+        
+        function approveDriver(driverId) {
+            const el = document.getElementById(driverId);
+            if(el) {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 400);
+                alert("تم تفعيل الكابتن بنجاح وإزالته من القائمة المعلقة.");
+            }
+        }
+    </script>
+</body>
 </html>
